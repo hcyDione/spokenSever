@@ -1,10 +1,19 @@
-var tokener = require('./token');
-var wxDataCrypt = require('./wxDataCrypt');
-var express = require('express');
+var tokener = require('./token'); //验证token
+var wxDataCrypt = require('./wxDataCrypt'); //微信用户数据解密
+var contactDb = require('./contactDb'); //链接mysql数据库
+
+var express = require('express'); 
 var app = express();
 var http = require("http");
+
+var path = require('path');
 var request = require('request');
 var bodyParser = require('body-parser');
+
+var fs = require('fs');
+var multer  = require('multer');
+var upload = multer({ dest: './tmp/' });
+
 
 app.use(bodyParser.urlencoded({ extended: false}));
 app.use(bodyParser.json())
@@ -24,16 +33,14 @@ app.post('/gettoken', function (req, res){
         	code: '0',
         	token: token
         }
-        res.writeHead(200,{'Content-Type': 'application/x-www-form-urlencoded'});
-        res.write(JSON.stringify(data));
 	} else{
 		var data = {
         	code: '-1',
         	message: '数据错误'
         }
-        res.writeHead(200,{'Content-Type': 'application/x-www-form-urlencoded'});
-		res.write(JSON.stringify(data));
 	}
+	res.writeHead(200,{'Content-Type': 'application/x-www-form-urlencoded'});
+	res.write(JSON.stringify(data));
 	res.end();
 })
 app.post('/code2session',function (req,res){
@@ -76,8 +83,6 @@ app.post('/decryption',function (req,res){
         	code: '-1',
         	message: 'token验证失败'
         }
-        res.writeHead(200,{'Content-Type': 'application/x-www-form-urlencoded'});
-		res.write(JSON.stringify(data));
     } else {
     	var sessionkey = req.body.sessionkey 
 		var encrypteddata = req.body.encrypteddata 
@@ -89,23 +94,55 @@ app.post('/decryption',function (req,res){
 			var data = {
 		        code: '-1',
 		        message: '数据解析错误'
-	        } 
-		    res.writeHead(200,{'Content-Type': 'application/x-www-form-urlencoded'});
-			res.write(JSON.stringify(data));    
+	        }    
 		} else {
 			var data = {
 		        code: '0',
 		        data: data
 	        } 
-		    res.writeHead(200,{'Content-Type': 'application/x-www-form-urlencoded'});
-			res.write(JSON.stringify(data)); 
 		}
     }
+    res.writeHead(200,{'Content-Type': 'application/x-www-form-urlencoded'});
+	res.write(JSON.stringify(data));
     res.end();
 })
 
 app.post('/loginwx',function (req,res){
+	console.log('绑定微信用户到自己数据库')
+	var name = req.body.name 
+	var psd = req.body.psd 
+	var val = {
+		'openId' : req.body.openId,
+		'nickName' : req.body.nickName,
+		'city': req.body.country + req.body.province,
+		'avatar' :  req.body.avatarUrl,
+		'cardbkImg': req.body.avatarUrl,
+	}
+    var id = contactDb.custInsert(val)
+    if (id == false){
+    	var data = {
+        	code: '-1',
+        	message: '数据库操作失败'
+        }
+        res.writeHead(200,{'Content-Type': 'application/x-www-form-urlencoded'});
+		res.write(JSON.stringify(data));
+		res.end();
+    } else {
+    	var data = {
+        	code: '0',
+        	data: id
+        }
+        res.writeHead(200,{'Content-Type': 'application/x-www-form-urlencoded'});
+		res.write(JSON.stringify(data));
+		res.end();
+    }
+})
 
+app.post('/upload', upload.single('file'),function (req, res, next){
+	console.log(req.file)
+   	var filepath = req.file.path
+   	var filetype = req.file.mimetype
+   	
 })
 
 var server = app.listen(8080, function () {
