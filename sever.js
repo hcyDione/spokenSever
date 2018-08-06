@@ -17,6 +17,8 @@ var upload = multer({ dest: './tmp/' });
 
 app.use(bodyParser.urlencoded({ extended: false}));
 app.use(bodyParser.json())
+//中间件来设置静态文件路径
+app.use(express.static('public'));
 
 app.post('/gettoken', function (req, res){
 	console.log('获取token')
@@ -118,31 +120,124 @@ app.post('/loginwx',function (req,res){
 		'avatar' :  req.body.avatarUrl,
 		'cardbkImg': req.body.avatarUrl,
 	}
-    var id = contactDb.custInsert(val)
-    if (id == false){
-    	var data = {
-        	code: '-1',
-        	message: '数据库操作失败'
-        }
-        res.writeHead(200,{'Content-Type': 'application/x-www-form-urlencoded'});
+	var id = contactDb.custInsert(val)
+    id.then(function (val) {
+    	if (val == false){
+	    	var data = {
+	        	code: '-1',
+	        	message: '数据库操作失败'
+	        }
+	    } else {
+	    	var data = {
+	        	code: '0',
+	        	data: val
+	        }
+	    }
+	    res.writeHead(200,{'Content-Type': 'application/x-www-form-urlencoded'});
 		res.write(JSON.stringify(data));
 		res.end();
-    } else {
-    	var data = {
-        	code: '0',
-        	data: id
-        }
-        res.writeHead(200,{'Content-Type': 'application/x-www-form-urlencoded'});
-		res.write(JSON.stringify(data));
-		res.end();
-    }
+    })
 })
 
-app.post('/upload', upload.single('file'),function (req, res, next){
-	console.log(req.file)
-   	var filepath = req.file.path
-   	var filetype = req.file.mimetype
-   	
+app.post('/upload',upload.single('file'),function (req, res, next){
+	var desFile = req.file.path;
+	var fileName = req.file.filename.substr(0,8);
+	var type = req.file.mimetype.split('/')[1];
+	var data = null
+	//var imgPath = './public/images/5.jpeg'
+	fs.readFile(desFile,function(err,filedata)  { //异步执行  'binary' 二进制流的文件
+        //var base64Img = filedata.toString("base64");
+        //var decodeImg = new Buffer(base64Img,"base64")         
+        //console.log(Buffer.compare(filedata,decodeImg));
+        //imgPath = './public/images/6.jpeg'
+        //filedata 可以换成decodeImg
+        desFile = './public/images/'+fileName+'.'+type
+	    fs.writeFile(desFile,filedata,function(errWrite){      //生成图片2(把buffer写入到图片文件)
+	        if (errWrite) {
+	            data = {
+					code: '-1',
+				    data: err
+			    }
+	        } else {
+	        	response = {
+				    code: '0',
+					data: '/public/images/'+ fileName+'.'+type
+				}			
+	        }
+	        res.writeHead(200,{'Content-Type': 'multipart/form-data'});
+			res.write(JSON.stringify(response));
+			res.end(); 
+        });
+    });
+	/*http.get(desFile, function(resImg){
+		console.log(resImg)
+		var img = new Buffer(resImg.base64, 'base64').toString('binary');
+	    fs.writeFile("./public/images/"+fileName+".png", img, "binary", function(err){
+	        if(err){
+	            response = {
+				    code: '-1',
+					data: err
+				}
+	        }
+	        response = {
+				code: '0',
+				data: __dirname+'public/images/'+fileName+'.png'
+		    }
+			res.writeHead(200,{'Content-Type': 'multipart/form-data'});
+			res.write(JSON.stringify(response));
+		    res.end(); 
+	    });
+    }); */ 	
+})
+app.post('/upload/video',upload.single('file'),function (req, res, next){
+	var desFile = req.file.path;
+	var fileName = req.file.filename.substr(0,8);
+	var type = req.file.mimetype.split('/')[1];
+	var data = null
+	//var imgPath = './public/images/5.jpeg'
+	fs.readFile(desFile,function(err,filedata)  { //异步执行  'binary' 二进制流的文件
+        //var base64Img = filedata.toString("base64");
+        //var decodeImg = new Buffer(base64Img,"base64")         
+        //console.log(Buffer.compare(filedata,decodeImg));
+        //imgPath = './public/images/6.jpeg'
+        //filedata 可以换成decodeImg
+        desFile = './public/video/'+fileName+'.'+type
+	    fs.writeFile(desFile,filedata,function(errWrite){      //生成图片2(把buffer写入到图片文件)
+	        if (errWrite) {
+	            data = {
+					code: '-1',
+				    data: err
+			    }
+	        } else {
+	        	response = {
+				    code: '0',
+					data: '/public/video/'+ fileName+'.'+type
+				}			
+	        }
+	        res.writeHead(200,{'Content-Type': 'multipart/form-data'});
+			res.write(JSON.stringify(response));
+			res.end(); 
+        });
+    });
+	/*http.get(desFile, function(resImg){
+		console.log(resImg)
+		var img = new Buffer(resImg.base64, 'base64').toString('binary');
+	    fs.writeFile("./public/images/"+fileName+".png", img, "binary", function(err){
+	        if(err){
+	            response = {
+				    code: '-1',
+					data: err
+				}
+	        }
+	        response = {
+				code: '0',
+				data: __dirname+'public/images/'+fileName+'.png'
+		    }
+			res.writeHead(200,{'Content-Type': 'multipart/form-data'});
+			res.write(JSON.stringify(response));
+		    res.end(); 
+	    });
+    }); */ 	
 })
 
 var server = app.listen(8080, function () {
