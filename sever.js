@@ -1,6 +1,7 @@
 var tokener = require('./token'); //验证token
 var wxDataCrypt = require('./wxDataCrypt'); //微信用户数据解密
-var contactDb = require('./contactDb'); //链接mysql数据库
+var contactDb = require('./custDb'); //链接mysql数据库增删改查用户信息
+var contentDb = require('./contentDb'); //链接mysql数据库增删改查内容
 
 var express = require('express'); 
 var app = express();
@@ -17,6 +18,7 @@ var upload = multer({ dest: './tmp/' });
 
 app.use(bodyParser.urlencoded({ extended: false}));
 app.use(bodyParser.json())
+
 //中间件来设置静态文件路径
 app.use(express.static('public'));
 
@@ -120,18 +122,21 @@ app.post('/loginwx',function (req,res){
 		'avatar' :  req.body.avatarUrl,
 		'cardbkImg': req.body.avatarUrl,
 	}
-	var id = contactDb.custInsert(val)
+	try {
+		var id = contactDb.custInsert(val)
+	} catch (err) {
+		var data = {
+	        code: '-1',
+	        message: err.message
+	    }
+	    res.writeHead(200,{'Content-Type': 'application/x-www-form-urlencoded'});
+		res.write(JSON.stringify(data));
+		res.end();
+	}
     id.then(function (val) {
-    	if (val == false){
-	    	var data = {
-	        	code: '-1',
-	        	message: '数据库操作失败'
-	        }
-	    } else {
-	    	var data = {
-	        	code: '0',
-	        	data: val
-	        }
+	    var data = {
+	        code: '0',
+	        data: val
 	    }
 	    res.writeHead(200,{'Content-Type': 'application/x-www-form-urlencoded'});
 		res.write(JSON.stringify(data));
@@ -168,26 +173,7 @@ app.post('/upload',upload.single('file'),function (req, res, next){
 			res.write(JSON.stringify(response));
 			res.end(); 
         });
-    });
-	/*http.get(desFile, function(resImg){
-		console.log(resImg)
-		var img = new Buffer(resImg.base64, 'base64').toString('binary');
-	    fs.writeFile("./public/images/"+fileName+".png", img, "binary", function(err){
-	        if(err){
-	            response = {
-				    code: '-1',
-					data: err
-				}
-	        }
-	        response = {
-				code: '0',
-				data: __dirname+'public/images/'+fileName+'.png'
-		    }
-			res.writeHead(200,{'Content-Type': 'multipart/form-data'});
-			res.write(JSON.stringify(response));
-		    res.end(); 
-	    });
-    }); */ 	
+    }); 	
 })
 app.post('/upload/video',upload.single('file'),function (req, res, next){
 	var desFile = req.file.path;
@@ -218,26 +204,62 @@ app.post('/upload/video',upload.single('file'),function (req, res, next){
 			res.write(JSON.stringify(response));
 			res.end(); 
         });
-    });
-	/*http.get(desFile, function(resImg){
-		console.log(resImg)
-		var img = new Buffer(resImg.base64, 'base64').toString('binary');
-	    fs.writeFile("./public/images/"+fileName+".png", img, "binary", function(err){
-	        if(err){
-	            response = {
-				    code: '-1',
-					data: err
-				}
-	        }
-	        response = {
-				code: '0',
-				data: __dirname+'public/images/'+fileName+'.png'
-		    }
-			res.writeHead(200,{'Content-Type': 'multipart/form-data'});
-			res.write(JSON.stringify(response));
-		    res.end(); 
-	    });
-    }); */ 	
+    });	
+})
+
+app.post('/content/add', function (req,res){
+	console.log('给内容库新加数据')
+	var val = {
+		'authorId' : req.body.authorId,
+		'title' : req.body.title,
+		'logo': req.body.logo,
+		'detail' :  req.body.detail
+	}
+	try {
+		var id = contentDb.custInsert(val)
+	} catch (err) {
+		var data = {
+	        code: '-1',
+	        message: err.message
+	    }
+	    res.writeHead(200,{'Content-Type': 'application/x-www-form-urlencoded'});
+		res.write(JSON.stringify(data));
+		res.end();
+	}
+    id.then(function (val) {
+	    var data = {
+	        code: '0',
+	        data: val
+	    }
+	    res.writeHead(200,{'Content-Type': 'application/x-www-form-urlencoded'});
+		res.write(JSON.stringify(data));
+		res.end();
+    })
+})
+
+app.get('/content/get', function (req,res){
+	console.log('获取所有内容数据')
+	try {
+		var findid = ""
+		var id = contentDb.custFind(findid)
+	} catch (err) {
+		var data = {
+	        code: '-1',
+	        message: err.message
+	    }
+	    res.writeHead(200,{'Content-Type': 'application/x-www-form-urlencoded'});
+		res.write(JSON.stringify(data));
+		res.end();
+	}
+    id.then(function (val) {
+	    var data = {
+	        code: '0',
+	        data: val
+	    }
+	    res.writeHead(200,{'Content-Type': 'application/x-www-form-urlencoded'});
+		res.write(JSON.stringify(data));
+		res.end();
+    })
 })
 
 var server = app.listen(8080, function () {
