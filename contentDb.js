@@ -13,9 +13,11 @@ var exeSql = {
 		connection.connect();
 		var sql = ''
 		if (id == ""){
+			//select nr.*, yh.nickName, yh.avatar from content nr, customer yh where nr.authorid = yh.userid
 			sql = "select * from content";
 		} else {
-			sql = "select * from content where userid = " +'"'+ id +'"';
+			sql = "select * from content where workid = " +'"'+ id +'"';
+		    console.log(sql)
 		}
 		return new Promise ((resolve, reject) => {
 			connection.query(sql,function (errfind,resfind){

@@ -9,17 +9,23 @@ var http = require("http");
 
 var path = require('path');
 var request = require('request');
+//bodyParser 设置对body的内容采取不同的处理方法：处理json数据/buffer数据流/文本数据/utf编码的数据
 var bodyParser = require('body-parser');
 
 var fs = require('fs');
+//multer 中间件来对上传路由接口进行处理：只处理multipart/form-data Multer会添加一个body(表单文本域信息)对象以及file或files(表单上传文件信息)对象到express的request对象中
 var multer  = require('multer');
+//生成专门处理上传的工具可以传入storage、limits等配置：dest/storage:在哪里存储文件
 var upload = multer({ dest: './tmp/' });
 
-
+//parse application/x-www-form-urlencoded :全局的方法
 app.use(bodyParser.urlencoded({ extended: false}));
+//parse application/json ：拦截和解析所有请求
 app.use(bodyParser.json())
+//修改和设定中间件解析的body内容类型：bodyParser.text({ type: 'text/html' })
+//body paser如果想针对特定路由做特定的请求则:app.post('/xxx',bodyParser.json(),function (req, res){})
 
-//中间件来设置静态文件路径
+//静态文件：所有文件路径都是相对于存放目录的，静态文件目录名不会出现在url中：http://localhost:8080/images/b07685d9.jpeg
 app.use(express.static('public'));
 
 app.post('/gettoken', function (req, res){
@@ -145,6 +151,7 @@ app.post('/loginwx',function (req,res){
 })
 
 app.post('/upload',upload.single('file'),function (req, res, next){
+//图片已经被放入到服务器里,且req也已经被upload中间件给处理好了（加上了file等信息）
 	var desFile = req.file.path;
 	var fileName = req.file.filename.substr(0,8);
 	var type = req.file.mimetype.split('/')[1];
@@ -239,8 +246,11 @@ app.post('/content/add', function (req,res){
 
 app.get('/content/get', function (req,res){
 	console.log('获取所有内容数据')
+	var findid = ""
+	if (req.query.id != undefined){
+      findid = parseInt(req.query.id)
+	}
 	try {
-		var findid = ""
 		var id = contentDb.custFind(findid)
 	} catch (err) {
 		var data = {

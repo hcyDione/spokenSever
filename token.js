@@ -1,3 +1,4 @@
+//封装了一系列密码学相关的功能
 var crypto = require("crypto");
 const payload = {
 	name: 'Dione',
