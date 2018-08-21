@@ -6,6 +6,11 @@ var contentDb = require('./contentDb'); //链接mysql数据库增删改查内容
 var express = require('express'); 
 var app = express();
 var http = require("http");
+app.all('*', function(req,res,next){
+	res.header("Access-Control-Allow-Origin", "*");
+    res.header('Access-Control-Allow-Methods', 'PUT, GET, POST, DELETE');
+    next();
+})
 
 var path = require('path');
 var request = require('request');
@@ -270,6 +275,18 @@ app.get('/content/get', function (req,res){
 		res.write(JSON.stringify(data));
 		res.end();
     })
+})
+
+app.get('/downfile', function (req,res){
+	console.log('服务器端文件的下载')
+	var path = __dirname + '/public/down.txt'
+	//res.download(path)
+	var f = fs.createReadStream(path);
+	res.writeHead(200, {
+	    'Content-Type': 'application/x-msdownload',
+	    'Content-Disposition': 'attachment; filename=down.txt'
+    });
+    f.pipe(res);
 })
 
 var server = app.listen(8080, function () {

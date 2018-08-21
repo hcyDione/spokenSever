@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+	<title>文件读取和下载</title>
+</head>
+<body>
+    <input type="file" onchange="handleFile()" id="Inputer"/>
+    <button onclick="blobFile()">blob下载文件</button> 
+    <button onclick="baseFile()">base64下载文件</button> 
+    <button onclick="csvFile()">csv下载文件</button>
+    <button onclick="serveFile()">服务器端压缩文件下载</button>
+    <button onclick="serveZipFile()">服务器端非压缩文件下载</button>
+    <button onclick="pdfFile()">生成pdf文件</button>
+    <div>
+    	<a href="./public/images/122df639.jpeg" download>下载</a>
+    	<img src="./public/images/122df639.jpeg"/>
+    	<a href="http://localhost:8080/down.txt">Ajax下载</a>
+    	<a href="http://localhost:8080/baidu.exe">Exe下载</a>
+    </div>
+    <!--<script type="text/javascript" src="json2csv.js"></script>
+    <script type="text/javascript" src="jspdf.js"></script>-->
+    <script type="text/javascript" src="jszip.js"></script>
+    <script type="text/javascript" src="xlsx.js"></script>
+    <script type="text/javascript">
+    	{
+    		function pdfFile () {
+    			var pdf = new jsPDF()
+    			var data = 'Dione is a good pdf'
+    			pdf.text(20, 20, data); 
+                pdf.addPage(); 
+				pdf.text(20, 20, data); 
+				var str =  pdf.output(); 
+				var eleLink = document.createElement('a');
+	            eleLink.download = 'a.pdf';
+	            eleLink.style.display = 'none';
+	            // 字符内容转变成blob地址
+	            var blob = new Blob([str]);
+	            eleLink.href = URL.createObjectURL(blob);
+	            // 触发点击
+	            document.body.appendChild(eleLink);
+	            eleLink.click();
+	            // 然后移除
+	            document.body.removeChild(eleLink);
+    		}
+    		function serveFile() {
+    			//document.execCommand("SaveAs"); 
+                window.location.href='http://localhost:8080/seart.rar'
+    		}
+    		function serveZipFile() {
+    			    //iframe方式下载
+    			    /*var iframe = document.createElement("iframe");
+		            iframe.src = 'http://localhost:8080/seart.rar';
+		            iframe.style.display = "none";
+		            document.body.appendChild(iframe);*/
+		            //Ajax方式下载
+		            //如果是ajax请求拿到的文件将返回的response头的“content-type”值设置为“application/x-msdownload; charset=utf-8” 告诉浏览器这是一个要保存到本地的文件 content-type:决定浏览怎样呈现服务器返回的数据
+		            var url = 'http://localhost:8080/downfile'
+		            var client = new XMLHttpRequest();
+		            client.open("GET", url);
+		            client.onreadystatechange = function () {
+                            if (this.readyState !== 4){
+                            	return
+                            } 
+                            if (this.status === 200){
+                            	console.log(this.response)
+                            } else {
+                            	console.log(this.statusText)
+                            }
+		                };
+		                client.send();
+
+    		}
+    		function blobFile () {
+    			var data = 'Dione is a great girl in her life'
+	              // 创建隐藏的可下载链接
+	              var eleLink = document.createElement('a');
+	              eleLink.download = 'b.csv';
+	              eleLink.style.display = 'none';
+	              // 字符内容转变成blob地址
+	              var blob = new Blob([data]);
+	              eleLink.href = URL.createObjectURL(blob);
+	              console.log(eleLink.href)
+	              // 触发点击
+	              document.body.appendChild(eleLink);
+	              eleLink.click();
+	              // 然后移除
+	              document.body.removeChild(eleLink);
+    		}
+    		function baseFile () {
+    			var img  = document.getElementById('logo')
+	            var eleLink = document.createElement('a');
+	            eleLink.download = 'b.png';
+	            eleLink.style.display = 'none';
+	            //图片的base64地址
+	            var canvas = document.createElement('canvas');
+	            var context = canvas.getContext('2d');
+	            context.drawImage(img, 0, 0);
+	            eleLink.href = canvas.toDataURL('image/png');
+	              //触发点击
+	            document.body.appendChild(eleLink);
+	            eleLink.click();
+	              //移除
+	            document.body.removeChild(eleLink);
+    		}
+    		function csvFile () {
+	              var fields = ['car', 'price', 'color'];
+	              var myCars = [
+	                {
+	                  "car": "Audi",
+	                  "price": 40000,
+	                  "color": "blue"
+	                }, {
+	                  "car": "BMW",
+	                  "price": 35000,
+	                  "color": "black"
+	                }, {
+	                  "car": "Porsche",
+	                  "price": 60000,
+	                  "color": "green"
+	                }
+	              ];
+	              // json数据转csv格式
+	              var csv = json2csv({ data: myCars, fields: fields });
+	              var eleLink = document.createElement('a');
+	              eleLink.download = 'test.csv';
+	              eleLink.style.display = 'none'
+	              //字符内容转化成blob文件
+	              var blob = new Blob([csv]);
+	              eleLink.href = URL.createObjectURL(blob);
+	              // 触发点击
+	              document.body.appendChild(eleLink);
+	              eleLink.click();
+	              // 然后移除
+	              document.body.removeChild(eleLink);
+    		}
+    		function handleFile () {
+	            let self = this
+	            let inputDom = document.getElementById('Inputer') //拿到的是个Dom元素
+	            var file = inputDom.files[0]
+	            var reader = new FileReader();
+	            reader.onloadend = function(e) {
+	              if (e.target.readyState == FileReader.DONE){
+	                var val = e.target.result
+	                var wb = XLSX.read(val, { type: "binary" });
+	                console.log(wb)
+	              }
+	            }
+	            reader.onerror = function (e) {
+	              switch(evt.target.error.code) {
+	                case evt.target.error.NOT_FOUND_ERR:
+	                  console.log('File Not Found!');
+	                  break;
+	                case evt.target.error.NOT_READABLE_ERR:
+	                  console.log('File is not readable');
+	                  break;
+	                case evt.target.error.ABORT_ERR:
+	                  break;
+	                default:
+	                  console.log('An error occurred reading this file.');
+	              };
+	            }
+	            reader.onabort = function(e) {
+	              alert('File read cancelled');
+	            };
+	            //var blob = file.slice(0, 50);  //只读取文件里面的规定范围里面的字段
+	            reader.readAsBinaryString(file); //可以直接读取文件，也可是直接读取文件里面的相应范围里面的字段
+            }
+    	}
+    </script>
+</body>
+</html>
